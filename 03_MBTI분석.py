@@ -1,0 +1,126 @@
+# app.py
+
+import streamlit as st
+import pandas as pd
+import matplotlib.pyplot as plt
+import numpy as np
+
+# -----------------------------
+# 페이지 설정
+# -----------------------------
+st.set_page_config(
+    page_title="🌍 국가별 MBTI 분석",
+    page_icon="🌈",
+    layout="wide"
+)
+
+# -----------------------------
+# 제목
+# -----------------------------
+st.title("🌍 국가별 MBTI 비율 분석기")
+st.markdown("국가를 선택하면 MBTI 유형 비율을 그래프로 보여줘요 ✨")
+
+# -----------------------------
+# 데이터 불러오기
+# -----------------------------
+@st.cache_data
+def load_data():
+    df = pd.read_csv("countriesMBTI_16types.csv")
+    return df
+
+df = load_data()
+
+# -----------------------------
+# 국가 선택
+# -----------------------------
+countries = sorted(df["Country"].unique())
+
+selected_country = st.selectbox(
+    "🌎 국가를 선택하세요",
+    countries
+)
+
+# -----------------------------
+# 선택 국가 데이터
+# -----------------------------
+country_data = df[df["Country"] == selected_country].iloc[0]
+
+mbti_types = [
+    "INFJ", "ISFJ", "INTP", "ISFP",
+    "ENTP", "INFP", "ENTJ", "ISTP",
+    "INTJ", "ESFP", "ESTJ", "ENFP",
+    "ESTP", "ISTJ", "ENFJ", "ESFJ"
+]
+
+values = [country_data[mbti] for mbti in mbti_types]
+
+# 퍼센트 변환
+values_percent = [v * 100 for v in values]
+
+# -----------------------------
+# 색상 설정
+# -----------------------------
+max_index = np.argmax(values_percent)
+
+# 하늘색 그라데이션
+base_colors = plt.cm.Blues(np.linspace(0.35, 0.85, len(values_percent)))
+
+colors = []
+
+for i in range(len(values_percent)):
+    if i == max_index:
+        colors.append("#FFD700")  # 노란색
+    else:
+        colors.append(base_colors[i])
+
+# -----------------------------
+# 그래프
+# -----------------------------
+fig, ax = plt.subplots(figsize=(14, 7))
+
+bars = ax.bar(
+    mbti_types,
+    values_percent,
+    color=colors,
+    edgecolor="black"
+)
+
+# 값 표시
+for bar in bars:
+    height = bar.get_height()
+    ax.text(
+        bar.get_x() + bar.get_width() / 2,
+        height + 0.2,
+        f"{height:.1f}%",
+        ha='center',
+        fontsize=10
+    )
+
+# -----------------------------
+# 그래프 꾸미기
+# -----------------------------
+ax.set_title(
+    f"{selected_country} MBTI 비율 분석 🌈",
+    fontsize=20,
+    fontweight="bold"
+)
+
+ax.set_xlabel("MBTI 유형", fontsize=14)
+ax.set_ylabel("비율 (%)", fontsize=14)
+
+ax.set_ylim(0, max(values_percent) + 5)
+
+plt.xticks(rotation=45)
+
+st.pyplot(fig)
+
+# -----------------------------
+# 최고 MBTI 표시
+# -----------------------------
+top_mbti = mbti_types[max_index]
+top_value = values_percent[max_index]
+
+st.success(
+    f"🏆 {selected_country}에서 가장 높은 MBTI는 "
+    f"✨ {top_mbti} ({top_value:.2f}%) 입니다!"
+)
