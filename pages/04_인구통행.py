@@ -12,7 +12,7 @@ st.set_page_config(
     layout="wide"
 )
 
-st.title("📊 서울 행정구별 연령 인구 분석")
+st.title("📊 서울 행정구별 연령 인구 꺾은선 그래프")
 
 # ---------------------------
 # 한글 폰트 설정
@@ -33,24 +33,27 @@ plt.rcParams["axes.unicode_minus"] = False
 # ---------------------------
 @st.cache_data
 def load_data():
-    df = pd.read_csv("population.csv", encoding="cp949")
-    return df
+    return pd.read_csv("population.csv", encoding="cp949")
 
 df = load_data()
 
 # ---------------------------
-# 컬럼 설정
+# 행정구 컬럼
 # ---------------------------
 region_col = df.columns[0]
 
-# 연령 컬럼 추출
+# ---------------------------
+# 나이 컬럼 찾기
+# ---------------------------
 age_columns = []
 
 for col in df.columns:
     if "세" in col:
         age_columns.append(col)
 
-# 나이 숫자만 추출
+# ---------------------------
+# 나이 숫자 추출
+# ---------------------------
 ages = []
 
 for col in age_columns:
@@ -78,22 +81,25 @@ selected_row = df[df[region_col] == selected_region]
 
 population_values = selected_row[age_columns].iloc[0]
 
-# 쉼표 제거 후 숫자 변환
+# 숫자 변환
 population_values = [
     int(str(v).replace(",", ""))
     for v in population_values
 ]
 
 # ---------------------------
-# 그래프
+# 꺾은선 그래프
 # ---------------------------
 fig, ax = plt.subplots(figsize=(16, 6))
 
 ax.plot(
     ages,
     population_values,
-    color="hotpink",
-    linewidth=3
+    linestyle="-",       # 선 연결
+    marker="o",          # 점 표시
+    markersize=4,
+    linewidth=2.5,
+    color="hotpink"
 )
 
 # 제목
@@ -103,27 +109,28 @@ ax.set_title(
     fontweight="bold"
 )
 
-# 축 이름
+# 축 라벨
 ax.set_xlabel("나이", fontsize=14)
 ax.set_ylabel("인구수", fontsize=14)
 
-# 10살 단위 표시
+# x축 10살 단위
 ax.set_xticks(range(0, 101, 10))
 
 # 세로 구분선
 ax.grid(
     axis="x",
     linestyle="--",
-    alpha=0.7
+    alpha=0.6
 )
 
-# 전체 그리드
+# 전체 격자
 ax.grid(
     True,
     linestyle=":",
     alpha=0.3
 )
 
+# Streamlit 출력
 st.pyplot(fig)
 
 # ---------------------------
