@@ -1,7 +1,6 @@
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
-import matplotlib.font_manager as fm
 import platform
 
 # ---------------------------
@@ -40,12 +39,11 @@ def load_data():
 df = load_data()
 
 # ---------------------------
-# 컬럼 정리
+# 컬럼 설정
 # ---------------------------
-# 행정구 이름 컬럼 찾기
 region_col = df.columns[0]
 
-# 나이 컬럼 추출
+# 연령 컬럼 추출
 age_columns = []
 
 for col in df.columns:
@@ -56,12 +54,12 @@ for col in df.columns:
 ages = []
 
 for col in age_columns:
-    number = ''.join(filter(str.isdigit, col))
+    num = ''.join(filter(str.isdigit, col))
 
-    if number == '':
+    if num == "":
         ages.append(100)
     else:
-        ages.append(int(number))
+        ages.append(int(num))
 
 # ---------------------------
 # 행정구 선택
@@ -74,22 +72,22 @@ selected_region = st.selectbox(
 )
 
 # ---------------------------
-# 선택한 행정구 데이터
+# 선택 데이터
 # ---------------------------
-selected_data = df[df[region_col] == selected_region]
+selected_row = df[df[region_col] == selected_region]
 
-population_values = selected_data[age_columns].iloc[0].values
+population_values = selected_row[age_columns].iloc[0]
 
-# 문자열 숫자 처리
+# 쉼표 제거 후 숫자 변환
 population_values = [
     int(str(v).replace(",", ""))
     for v in population_values
 ]
 
 # ---------------------------
-# 그래프 생성
+# 그래프
 # ---------------------------
-fig, ax = plt.subplots(figsize=(15, 6))
+fig, ax = plt.subplots(figsize=(16, 6))
 
 ax.plot(
     ages,
@@ -101,22 +99,22 @@ ax.plot(
 # 제목
 ax.set_title(
     f"{selected_region} 연령별 인구수",
-    fontsize=18,
+    fontsize=20,
     fontweight="bold"
 )
 
-# 축 라벨
-ax.set_xlabel("나이", fontsize=13)
-ax.set_ylabel("인구수", fontsize=13)
+# 축 이름
+ax.set_xlabel("나이", fontsize=14)
+ax.set_ylabel("인구수", fontsize=14)
 
-# 10살 단위 구분선
+# 10살 단위 표시
 ax.set_xticks(range(0, 101, 10))
 
 # 세로 구분선
 ax.grid(
     axis="x",
     linestyle="--",
-    alpha=0.6
+    alpha=0.7
 )
 
 # 전체 그리드
@@ -129,13 +127,16 @@ ax.grid(
 st.pyplot(fig)
 
 # ---------------------------
-# 데이터 표 보기
+# 데이터 표
 # ---------------------------
 st.subheader("📋 연령별 인구 데이터")
 
-chart_df = pd.DataFrame({
+result_df = pd.DataFrame({
     "나이": ages,
     "인구수": population_values
 })
 
-st.dataframe(chart_df, use_container_width=True)
+st.dataframe(
+    result_df,
+    use_container_width=True
+)
