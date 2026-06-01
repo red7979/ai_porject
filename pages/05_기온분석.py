@@ -1,8 +1,7 @@
 import streamlit as st
 import pandas as pd
-import matplotlib.pyplot as plt
 import numpy as np
-from sklearn.linear_model import LinearRegression
+import matplotlib.pyplot as plt
 
 st.set_page_config(
     page_title="서울 기온 분석",
@@ -12,8 +11,12 @@ st.set_page_config(
 
 plt.rcParams["axes.unicode_minus"] = False
 
-st.title("🌡️ 서울 기온 분석 및 미래 최고기온 예측")
+st.title("🌡️ 서울 기온 분석")
+st.markdown("월·일을 선택하면 해당 날짜의 연도별 최고기온과 최저기온을 확인하고 미래 최고기온을 예측합니다.")
 
+# -----------------------------
+# 데이터 불러오기
+# -----------------------------
 @st.cache_data
 def load_data():
 
@@ -24,9 +27,21 @@ def load_data():
 
     df.columns = df.columns.str.strip()
 
-    date_col = [c for c in df.columns if "날짜" in c][0]
-    max_col = [c for c in df.columns if "최고기온" in c][0]
-    min_col = [c for c in df.columns if "최저기온" in c][0]
+    date_col = None
+    max_col = None
+    min_col = None
+
+    for col in df.columns:
+        if "날짜" in col:
+            date_col = col
+        elif "최고기온" in col:
+            max_col = col
+        elif "최저기온" in col:
+            min_col = col
+
+    if date_col is None:
+        st.error("날짜 컬럼을 찾을 수 없습니다.")
+        st.stop()
 
     df[date_col] = pd.to_datetime(
         df[date_col],
@@ -47,9 +62,9 @@ def load_data():
 
 df, max_col, min_col = load_data()
 
-# --------------------
-# 선택 영역
-# --------------------
+# -----------------------------
+# 사이드바
+# -----------------------------
 st.sidebar.header("📅 날짜 선택")
 
 month = st.sidebar.selectbox(
@@ -63,13 +78,15 @@ day = st.sidebar.selectbox(
 )
 
 future_year = st.sidebar.number_input(
-    "🔮 미래 연도",
+    "🔮 미래 연도 선택",
     min_value=2020,
     max_value=2200,
-    value=2050,
-    step=1
+    value=2050
 )
 
+# -----------------------------
+# 데이터 필터링
+# -----------------------------
 filtered = df[
     (df["월"] == month) &
     (df["일"] == day)
@@ -79,8 +96,8 @@ filtered = filtered.dropna(
     subset=[max_col, min_col]
 )
 
-if len(filtered) < 5:
-    st.warning("예측에 필요한 데이터가 부족합니다.")
+if filtered.empty:
+    st.warning("해당 날짜의 데이터가 없습니다.")
     st.stop()
 
 filtered = filtered.sort_values("연도")
@@ -89,29 +106,62 @@ years = filtered["연도"]
 highs = filtered[max_col]
 lows = filtered[min_col]
 
-# --------------------
-# AI 예측
-# --------------------
-X = years.values.reshape(-1, 1)
-y = highs.values
+# -----------------------------
+# 미래 최고기온 예측
+# -----------------------------
+if len(filtered) >= 10:
 
-model = LinearRegression()
-model.fit(X, y)
+    coef = np.polyfit(
+        years.values,
+        highs.values,
+        2
+    )
 
-pred_temp = model.predict([[future_year]])[0]
+    pred_temp = np.polyval(
+        coef,
+        future_year
+    )
 
+    trend_years = np.append(
+        years.values,
+        future_year
+    )
+
+    trend_pred = np.polyval(
+        coef,
+        trend_years
+    )
+
+else:
+    pred_temp = None
+
+# -----------------------------
+# 예측 결과
+# -----------------------------
 st.subheader("🔮 미래 최고기온 예측")
 
-st.success(
-    f"{month}월 {day}일의 {future_year}년 예상 최고기온은 "
-    f"{pred_temp:.1f}℃ 입니다."
+if pred_temp is not None:
+
+    st.success(
+        f"{future_year}년 {month}월 {day}일 예상 최고기온 : "
+        f"{pred_temp:.1f}℃"
+    )
+
+else:
+    st.warning("예측에 필요한 데이터가 부족합니다.")
+
+# -----------------------------
+# 그래프
+# -----------------------------
+st.subheader(
+    f"📈 {month}월 {day}일 연도별 최고·최저기온"
 )
 
-# --------------------
-# 그래프
-# --------------------
-fig, ax = plt.subplots(figsize=(22, 10))
+fig, ax = plt.subplots(
+    figsize=(20, 10)
+)
 
+# 최고기온 무지개색
 colors = plt.cm.rainbow(
     np.linspace(0, 1, len(highs))
 )
@@ -128,49 +178,68 @@ ax.scatter(
     years,
     highs,
     c=colors,
-    s=40
+    s=30
 )
 
+# 범례용 최고기온
+ax.plot(
+    [],
+    [],
+    color="red",
+    linewidth=3,
+    label="최고기온"
+)
+
+# 최저기온
 ax.plot(
     years,
     lows,
     color="#87CEFA",
     linewidth=3,
     marker="o",
+    markersize=4,
     label="최저기온"
 )
 
-# 미래 예측점
-ax.scatter(
-    future_year,
-    pred_temp,
-    s=250,
-    marker="*",
-    label=f"{future_year} 예측 최고기온"
+# 미래 예측 표시
+if pred_temp is not None:
+
+    ax.scatter(
+        future_year,
+        pred_temp,
+        s=250,
+        marker="*",
+        label=f"{future_year} 예측 최고기온"
+    )
+
+    ax.plot(
+        trend_years,
+        trend_pred,
+        linestyle="--",
+        linewidth=2,
+        label="예측 추세선"
+    )
+
+# 촘촘한 연도 표시
+step = max(1, len(years) // 20)
+
+ax.set_xticks(
+    years.iloc[::step]
 )
 
-# 추세선
-trend_years = np.append(years.values, future_year)
-trend_pred = model.predict(
-    trend_years.reshape(-1, 1)
-)
-
-ax.plot(
-    trend_years,
-    trend_pred,
-    linestyle="--",
-    linewidth=2,
-    label="예측 추세선"
-)
-
-ax.set_title(
-    f"{month}월 {day}일 연도별 기온 및 미래 최고기온 예측",
-    fontsize=16
+ax.tick_params(
+    axis="x",
+    rotation=45
 )
 
 ax.set_xlabel("연도")
 ax.set_ylabel("기온(℃)")
-ax.grid(True, alpha=0.3)
+
+ax.grid(
+    True,
+    linestyle="--",
+    alpha=0.4
+)
 
 ax.legend()
 
@@ -178,34 +247,35 @@ plt.tight_layout()
 
 st.pyplot(fig)
 
-# --------------------
+# -----------------------------
 # 통계
-# --------------------
+# -----------------------------
 st.subheader("📊 통계")
 
-c1, c2, c3 = st.columns(3)
+col1, col2, col3 = st.columns(3)
 
-with c1:
+with col1:
     st.metric(
         "역대 최고기온",
         f"{highs.max():.1f}℃"
     )
 
-with c2:
+with col2:
     st.metric(
         "역대 최저기온",
         f"{lows.min():.1f}℃"
     )
 
-with c3:
-    st.metric(
-        f"{future_year}년 예측",
-        f"{pred_temp:.1f}℃"
-    )
+with col3:
+    if pred_temp is not None:
+        st.metric(
+            f"{future_year}년 예측",
+            f"{pred_temp:.1f}℃"
+        )
 
-# --------------------
+# -----------------------------
 # 데이터 표
-# --------------------
+# -----------------------------
 st.subheader("📋 데이터")
 
 result = pd.DataFrame({
