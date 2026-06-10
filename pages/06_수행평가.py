@@ -1,138 +1,108 @@
 import streamlit as st
 import pandas as pd
 
-# -------------------------
+# -----------------------
 # 페이지 설정
-# -------------------------
+# -----------------------
 st.set_page_config(
     page_title="🦖 공룡 도감",
     page_icon="🦕",
-    layout="wide"
+    layout="centered"
 )
 
-# -------------------------
+# -----------------------
+# 공룡 데이터
+# -----------------------
+data = {
+    "공룡 이름": [
+        "티라노사우루스",
+        "트리케라톱스",
+        "브라키오사우루스",
+        "벨로시랩터",
+        "스테고사우루스",
+        "스피노사우루스",
+        "알로사우루스",
+        "파라사우롤로푸스",
+        "안킬로사우루스",
+        "디플로도쿠스"
+    ],
+    "몸길이(m)": [
+        12, 9, 25, 2, 9, 15, 12, 10, 8, 27
+    ],
+    "몸무게(t)": [
+        8, 12, 50, 0.02, 5, 7, 2, 3, 6, 15
+    ],
+    "시대": [
+        "후기 백악기",
+        "후기 백악기",
+        "후기 쥐라기",
+        "후기 백악기",
+        "후기 쥐라기",
+        "후기 백악기",
+        "후기 쥐라기",
+        "후기 백악기",
+        "후기 백악기",
+        "후기 쥐라기"
+    ]
+}
+
+df = pd.DataFrame(data)
+
+# -----------------------
 # 제목
-# -------------------------
+# -----------------------
 st.title("🦖 공룡 도감")
-st.markdown("### 🌟 공룡을 선택하면 몸길이, 몸무게, 시대를 알려줘요!")
+st.write("좋아하는 공룡을 선택해 보세요! 🌟")
 
-# -------------------------
-# 데이터 불러오기
-# -------------------------
-@st.cache_data
-def load_data():
-    try:
-        return pd.read_csv("aaa.csv", encoding="utf-8")
-    except:
-        return pd.read_csv("aaa.csv", encoding="cp949")
-
-df = load_data()
-
-# -------------------------
-# 컬럼명 자동 찾기
-# -------------------------
-name_col = None
-size_col = None
-weight_col = None
-period_col = None
-
-for col in df.columns:
-    col_str = str(col)
-
-    if "한글명" in col_str:
-        name_col = col
-
-    if "크기" in col_str:
-        size_col = col
-
-    if "체중" in col_str:
-        weight_col = col
-
-    if "생존시기" in col_str:
-        period_col = col
-
-# 컬럼 확인
-if None in [name_col, size_col, weight_col, period_col]:
-    st.error("❌ CSV 컬럼을 찾을 수 없습니다.")
-    st.write("현재 컬럼 목록")
-    st.write(df.columns.tolist())
-    st.stop()
-
-# -------------------------
+# -----------------------
 # 공룡 선택
-# -------------------------
-dino_name = st.selectbox(
+# -----------------------
+selected = st.selectbox(
     "🦕 공룡 이름 선택",
-    sorted(df[name_col].dropna().unique())
+    df["공룡 이름"]
 )
 
-selected = df[df[name_col] == dino_name].iloc[0]
+# 선택된 공룡 정보
+row = df[df["공룡 이름"] == selected].iloc[0]
 
-# -------------------------
-# 정보 출력
-# -------------------------
 st.divider()
 
-st.subheader(f"🦖 {dino_name}")
+st.subheader(f"🦖 {selected}")
 
 col1, col2, col3 = st.columns(3)
 
 with col1:
     st.metric(
         "📏 몸길이",
-        f"{selected[size_col]}"
+        f"{row['몸길이(m)']} m"
     )
 
 with col2:
     st.metric(
         "⚖️ 몸무게",
-        f"{selected[weight_col]}"
+        f"{row['몸무게(t)']} t"
     )
 
 with col3:
     st.metric(
         "⏳ 시대",
-        f"{selected[period_col]}"
+        row["시대"]
     )
 
-# -------------------------
-# 설명 출력
-# -------------------------
 st.divider()
 
 st.success(
-    f"✨ {dino_name}의 몸길이는 {selected[size_col]}, "
-    f"몸무게는 {selected[weight_col]}, "
-    f"생존 시기는 {selected[period_col]} 입니다!"
+    f"✨ {selected}의 몸길이는 {row['몸길이(m)']}m, "
+    f"몸무게는 {row['몸무게(t)']}t 입니다!"
 )
 
-# -------------------------
-# 시대별 분포
-# -------------------------
 st.divider()
 
 st.subheader("📊 시대별 공룡 수")
 
-period_count = df[period_col].value_counts()
+st.bar_chart(df["시대"].value_counts())
 
-st.bar_chart(period_count)
-
-# -------------------------
-# 전체 데이터
-# -------------------------
 with st.expander("📚 전체 공룡 목록 보기"):
-    st.dataframe(
-        df[[name_col, size_col, weight_col, period_col]],
-        use_container_width=True
-    )
+    st.dataframe(df, use_container_width=True)
 
 st.balloons()
-
-st.markdown(
-    """
-    ---
-    🦕 재미있는 공룡 탐험 끝!
-    
-    다른 공룡도 선택해 보세요 😎
-    """
-)
