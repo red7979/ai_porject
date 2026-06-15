@@ -11,10 +11,14 @@ st.set_page_config(
 )
 
 # -----------------------------
-# 공룡 풍선 효과 🦖
+# 연한 초록색 배경 + 공룡 풍선 효과
 # -----------------------------
 st.markdown("""
 <style>
+.stApp {
+    background-color: #E8F5E9;
+}
+
 .dino {
     position: fixed;
     bottom: -80px;
@@ -92,7 +96,7 @@ df = pd.DataFrame(data)
 # 제목
 # -----------------------------
 st.title("🦖 공룡 분석 프로젝트")
-st.markdown("### 🌎 공룡의 세계에 오신 것을 환영합니다!")
+st.markdown("### 🌿 공룡의 세계에 오신 것을 환영합니다!")
 
 st.info("🦕 공룡 이름을 선택하면 몸길이, 몸무게, 시대를 확인할 수 있어요!")
 
@@ -107,7 +111,7 @@ selected = st.selectbox(
 row = df[df["공룡 이름"] == selected].iloc[0]
 
 # -----------------------------
-# 결과 출력
+# 공룡 정보 출력
 # -----------------------------
 st.divider()
 
