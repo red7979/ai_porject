@@ -1,129 +1,264 @@
+# app.py
+
 import streamlit as st
 import pandas as pd
+import matplotlib.pyplot as plt
+import numpy as np
 
+# -----------------------------------
+# 페이지 설정
+# -----------------------------------
 st.set_page_config(
-    page_title="🦖 공룡 분석 프로젝트",
-    page_icon="🦕",
+    page_title="🦖 국가별 MBTI 분석기",
+    page_icon="🦖",
     layout="wide"
 )
 
-# ---------------------
-# 데이터
-# ---------------------
-data = {
-    "공룡 이름": [
-        "티라노사우루스",
-        "트리케라톱스",
-        "브라키오사우루스",
-        "벨로시랩터",
-        "스테고사우루스",
-        "스피노사우루스",
-        "알로사우루스",
-        "안킬로사우루스"
-    ],
-    "몸길이(m)": [12, 9, 25, 2, 9, 15, 12, 8],
-    "몸무게(t)": [8, 12, 50, 0.02, 5, 7, 2, 6],
-    "시대": [
-        "후기 백악기",
-        "후기 백악기",
-        "후기 쥐라기",
-        "후기 백악기",
-        "후기 쥐라기",
-        "후기 백악기",
-        "후기 쥐라기",
-        "후기 백악기"
+# -----------------------------------
+# 공룡 배너
+# -----------------------------------
+st.markdown("""
+<h1 style='text-align:center;'>
+🦖🌋 국가별 MBTI 분석기 🌋🦕
+</h1>
+
+<h4 style='text-align:center;'>
+국가별 MBTI 비율과 MBTI별 국가 순위를 확인해보세요 ✨
+</h4>
+
+<hr>
+""", unsafe_allow_html=True)
+
+# -----------------------------------
+# 데이터 불러오기
+# -----------------------------------
+@st.cache_data
+def load_data():
+
+    df = pd.read_csv("countriesMBTI_16types.csv")
+
+    df.columns = df.columns.str.strip()
+
+    return df
+
+df = load_data()
+
+# -----------------------------------
+# MBTI 목록
+# -----------------------------------
+mbti_types = [
+    "INFJ", "ISFJ", "INTP", "ISFP",
+    "ENTP", "INFP", "ENTJ", "ISTP",
+    "INTJ", "ESFP", "ESTJ", "ENFP",
+    "ESTP", "ISTJ", "ENFJ", "ESFJ"
+]
+
+# -----------------------------------
+# 탭 생성
+# -----------------------------------
+tab1, tab2 = st.tabs(
+    [
+        "🌎 국가별 MBTI 분석",
+        "🏆 MBTI 국가 순위"
     ]
-}
-
-df = pd.DataFrame(data)
-
-# ---------------------
-# 제목
-# ---------------------
-st.title("🦖 공룡 분석 프로젝트")
-st.markdown("### 🌎 1억 년 전부터 현재까지의 공룡 이야기")
-
-# ---------------------
-# 공룡 선택
-# ---------------------
-selected = st.selectbox(
-    "🦕 공룡을 선택하세요",
-    df["공룡 이름"]
 )
 
-row = df[df["공룡 이름"] == selected].iloc[0]
+# =====================================================
+# TAB 1
+# =====================================================
+with tab1:
 
-st.subheader(f"🦖 {selected}")
+    st.subheader("🌎 국가별 MBTI 비율")
 
-c1, c2, c3 = st.columns(3)
+    countries = sorted(df["Country"].unique())
 
-with c1:
-    st.metric("📏 몸길이", f"{row['몸길이(m)']} m")
+    selected_country = st.selectbox(
+        "국가를 선택하세요",
+        countries,
+        key="country_select"
+    )
 
-with c2:
-    st.metric("⚖️ 몸무게", f"{row['몸무게(t)']} t")
+    country_data = df[df["Country"] == selected_country].iloc[0]
 
-with c3:
-    st.metric("⏳ 시대", row["시대"])
+    values = []
 
-# ---------------------
-# 시대별 공룡 수
-# ---------------------
-st.divider()
+    for mbti in mbti_types:
+        values.append(float(country_data[mbti]) * 100)
 
-st.subheader("📊 시대별 공룡 분포")
+    graph_df = pd.DataFrame({
+        "MBTI": mbti_types,
+        "비율": values
+    })
 
-period_count = df["시대"].value_counts()
+    # 높은 순 정렬
+    graph_df = graph_df.sort_values(
+        by="비율",
+        ascending=False
+    )
 
-st.bar_chart(period_count)
+    # 초록 그라데이션
+    green_colors = plt.cm.Greens(
+        np.linspace(0.35, 0.85, len(graph_df))
+    )
 
-# ---------------------
-# 1억 년 전 ~ 현재 분석
-# ---------------------
-st.divider()
+    colors = []
 
-st.subheader("📈 1억 년 전부터 현재까지 분석")
+    for i in range(len(graph_df)):
 
-timeline = pd.DataFrame({
-    "연도(백만 년 전)": [100, 80, 66, 0],
-    "공룡 다양성 지수": [70, 95, 100, 0]
-})
+        if i == 0:
+            colors.append("#00C853")
+        else:
+            colors.append(green_colors[i])
 
-st.line_chart(
-    timeline.set_index("연도(백만 년 전)")
-)
+    fig, ax = plt.subplots(
+        figsize=(14, 7)
+    )
 
-st.info("""
-🦖 약 1억 년 전에는 다양한 공룡이 번성했어요.
+    ax.set_navigate(False)
 
-🌟 약 8천만 년 전에는 공룡의 종류가 더욱 많아졌어요.
+    bars = ax.bar(
+        graph_df["MBTI"],
+        graph_df["비율"],
+        color=colors,
+        edgecolor="black"
+    )
 
-☄️ 약 6,600만 년 전 소행성 충돌 이후 대부분의 공룡이 멸종했어요.
+    for bar in bars:
 
-🐦 현재는 새가 공룡의 후손으로 알려져 있어요.
-""")
+        height = bar.get_height()
 
-# ---------------------
-# 흥미로운 사실
-# ---------------------
-st.divider()
+        ax.text(
+            bar.get_x() + bar.get_width()/2,
+            height + 0.2,
+            f"{height:.1f}%",
+            ha="center"
+        )
 
-st.subheader("🤩 재미있는 공룡 상식")
+    ax.set_title(
+        f"{selected_country} MBTI 순위",
+        fontsize=20,
+        fontweight="bold"
+    )
 
-st.write("""
-• 🦕 브라키오사우루스는 버스 여러 대를 이어 놓은 것만큼 길었어요.
+    ax.set_xlabel("MBTI")
+    ax.set_ylabel("비율 (%)")
 
-• 🦖 티라노사우루스의 이빨은 바나나만큼 컸어요.
+    plt.xticks(rotation=45)
 
-• 🐦 현대의 새들은 공룡의 후손으로 알려져 있어요.
+    st.pyplot(
+        fig,
+        clear_figure=True,
+        use_container_width=True
+    )
 
-• 🌎 공룡은 약 1억 6천만 년 이상 지구를 지배했어요.
-""")
+    st.success(
+        f"🥇 1위 MBTI : {graph_df.iloc[0]['MBTI']} "
+        f"({graph_df.iloc[0]['비율']:.2f}%)"
+    )
 
-# ---------------------
-# 전체 데이터
-# ---------------------
-with st.expander("📚 공룡 데이터 보기"):
-    st.dataframe(df, use_container_width=True)
+    st.dataframe(
+        graph_df,
+        use_container_width=True
+    )
 
-st.success("🚀 공룡 탐험 완료!")
+# =====================================================
+# TAB 2
+# =====================================================
+with tab2:
+
+    st.subheader("🏆 MBTI별 국가 TOP10")
+
+    selected_mbti = st.selectbox(
+        "MBTI 선택",
+        mbti_types,
+        key="mbti_select"
+    )
+
+    rank_df = df[
+        ["Country", selected_mbti]
+    ].copy()
+
+    rank_df[selected_mbti] = (
+        rank_df[selected_mbti] * 100
+    )
+
+    rank_df = rank_df.sort_values(
+        by=selected_mbti,
+        ascending=False
+    )
+
+    top10 = rank_df.head(10)
+
+    green_colors = plt.cm.Greens(
+        np.linspace(0.35, 0.85, len(top10))
+    )
+
+    colors = []
+
+    for i in range(len(top10)):
+
+        if i == 0:
+            colors.append("#00C853")
+        else:
+            colors.append(green_colors[i])
+
+    fig2, ax2 = plt.subplots(
+        figsize=(14, 7)
+    )
+
+    ax2.set_navigate(False)
+
+    bars2 = ax2.bar(
+        top10["Country"],
+        top10[selected_mbti],
+        color=colors,
+        edgecolor="black"
+    )
+
+    for bar in bars2:
+
+        height = bar.get_height()
+
+        ax2.text(
+            bar.get_x() + bar.get_width()/2,
+            height + 0.2,
+            f"{height:.1f}%",
+            ha="center"
+        )
+
+    ax2.set_title(
+        f"{selected_mbti} 비율 국가 TOP10",
+        fontsize=20,
+        fontweight="bold"
+    )
+
+    ax2.set_xlabel("국가")
+    ax2.set_ylabel("비율 (%)")
+
+    plt.xticks(rotation=30)
+
+    st.pyplot(
+        fig2,
+        clear_figure=True,
+        use_container_width=True
+    )
+
+    st.success(
+        f"🥇 1위 국가 : "
+        f"{top10.iloc[0]['Country']} "
+        f"({top10.iloc[0][selected_mbti]:.2f}%)"
+    )
+
+    top10_display = top10.copy()
+
+    top10_display.index = range(
+        1,
+        len(top10_display) + 1
+    )
+
+    top10_display.index.name = "순위"
+
+    st.dataframe(
+        top10_display,
+        use_container_width=True
+    )
