@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+import matplotlib.pyplot as plt
 
 st.set_page_config(
     page_title="🦖 공룡 분석 프로젝트",
@@ -7,42 +8,34 @@ st.set_page_config(
     layout="wide"
 )
 
-# 공룡 올라오는 효과
+# -----------------------------
+# 공룡 배경
+# -----------------------------
 st.markdown("""
 <style>
-.dino {
-    position: fixed;
-    bottom: -50px;
-    font-size: 40px;
-    animation: rise 6s linear infinite;
+.stApp {
+    background: linear-gradient(to bottom, #87CEEB, #E8F5E9);
 }
 
-.d1 { left: 10%; animation-delay: 0s; }
-.d2 { left: 30%; animation-delay: 2s; }
-.d3 { left: 50%; animation-delay: 4s; }
-.d4 { left: 70%; animation-delay: 1s; }
-.d5 { left: 90%; animation-delay: 3s; }
-
-@keyframes rise {
-    from {
-        transform: translateY(0);
-        opacity: 1;
-    }
-    to {
-        transform: translateY(-110vh);
-        opacity: 0;
-    }
+.dino-bg {
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+    opacity: 0.12;
+    font-size: 120px;
+    text-align: center;
+    z-index: -1;
 }
 </style>
 
-<div class="dino d1">🦖</div>
-<div class="dino d2">🦕</div>
-<div class="dino d3">🦖</div>
-<div class="dino d4">🦕</div>
-<div class="dino d5">🦖</div>
+<div class="dino-bg">
+🦕 🦖 🌴 🦕 🦖 🌴 🦕
+</div>
 """, unsafe_allow_html=True)
 
-# 데이터
+# -----------------------------
+# 공룡 데이터
+# -----------------------------
 data = {
     "공룡 이름": [
         "티라노사우루스",
@@ -70,17 +63,21 @@ data = {
 
 df = pd.DataFrame(data)
 
+# -----------------------------
+# 제목
+# -----------------------------
 st.title("🦖 공룡 분석 프로젝트")
-st.markdown("### 🌎 공룡의 세계로 떠나보자!")
+st.markdown("### 🌎 1억 년 전부터 현재까지 공룡의 세계!")
 
+# -----------------------------
+# 공룡 선택
+# -----------------------------
 selected = st.selectbox(
     "🦕 공룡을 선택하세요",
     df["공룡 이름"]
 )
 
 row = df[df["공룡 이름"] == selected].iloc[0]
-
-st.subheader(f"🦖 {selected}")
 
 c1, c2, c3 = st.columns(3)
 
@@ -93,37 +90,62 @@ with c2:
 with c3:
     st.metric("⏳ 시대", row["시대"])
 
+# -----------------------------
+# 시대별 공룡 그래프 (사진처럼 고정)
+# -----------------------------
 st.divider()
-
-st.subheader("📊 시대별 공룡 수")
+st.subheader("📊 시대별 공룡 분포")
 
 period_count = df["시대"].value_counts()
 
-# 기본 그래프 (드래그/확대 기능 없음)
-st.bar_chart(period_count)
+fig1, ax1 = plt.subplots(figsize=(6, 4))
+ax1.bar(period_count.index, period_count.values)
+ax1.set_title("시대별 공룡 수")
+ax1.set_ylabel("공룡 수")
 
+st.pyplot(fig1)
+
+# -----------------------------
+# 1억년 전 ~ 현재 그래프
+# -----------------------------
 st.divider()
-
 st.subheader("📈 1억 년 전부터 현재까지")
 
 timeline = pd.DataFrame({
-    "연도(백만 년 전)": [100, 80, 66, 0],
-    "공룡 다양성 지수": [70, 95, 100, 0]
+    "백만 년 전": [100, 80, 66, 0],
+    "공룡 다양성": [70, 95, 100, 0]
 })
 
-st.line_chart(
-    timeline.set_index("연도(백만 년 전)")
+fig2, ax2 = plt.subplots(figsize=(7, 4))
+ax2.plot(
+    timeline["백만 년 전"],
+    timeline["공룡 다양성"],
+    marker="o"
 )
 
-st.info("""
-🦖 약 1억 년 전 공룡은 매우 번성했어요.
+ax2.set_title("1억 년 전부터 현재까지")
+ax2.set_xlabel("백만 년 전")
+ax2.set_ylabel("공룡 다양성")
 
-☄️ 약 6600만 년 전 소행성 충돌 이후 대부분 멸종했어요.
+st.pyplot(fig2)
+
+# -----------------------------
+# 설명
+# -----------------------------
+st.info("""
+🦖 약 1억 년 전 공룡은 번성했어요.
+
+🌟 약 8천만 년 전에는 다양한 종이 등장했어요.
+
+☄️ 약 6,600만 년 전 소행성 충돌 이후 대부분 멸종했어요.
 
 🐦 오늘날의 새는 공룡의 후손으로 알려져 있어요.
 """)
 
-with st.expander("📚 전체 공룡 데이터 보기"):
+# -----------------------------
+# 전체 데이터
+# -----------------------------
+with st.expander("📚 전체 공룡 데이터"):
     st.dataframe(df, use_container_width=True)
 
 st.success("🚀 공룡 탐험 완료!")
