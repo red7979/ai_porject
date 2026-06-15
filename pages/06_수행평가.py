@@ -21,20 +21,20 @@ st.markdown("""
     position: fixed;
     bottom: 0;
     width: 100%;
-    opacity: 0.12;
-    font-size: 120px;
+    opacity: 0.08;
+    font-size: 80px;
     text-align: center;
     z-index: -1;
 }
 </style>
 
 <div class="dino-bg">
-🦕 🦖 🌴 🦕 🦖 🌴 🦕
+🦕 🌴 🦖 🌴 🦕 🌴 🦖
 </div>
 """, unsafe_allow_html=True)
 
 # -----------------------------
-# 공룡 데이터
+# 데이터
 # -----------------------------
 data = {
     "공룡 이름": [
@@ -67,7 +67,7 @@ df = pd.DataFrame(data)
 # 제목
 # -----------------------------
 st.title("🦖 공룡 분석 프로젝트")
-st.markdown("### 🌎 1억 년 전부터 현재까지 공룡의 세계!")
+st.markdown("### 🌎 1억 년 전부터 현재까지 공룡 탐험!")
 
 # -----------------------------
 # 공룡 선택
@@ -91,22 +91,22 @@ with c3:
     st.metric("⏳ 시대", row["시대"])
 
 # -----------------------------
-# 시대별 공룡 그래프 (사진처럼 고정)
+# 시대별 공룡 분포
 # -----------------------------
 st.divider()
 st.subheader("📊 시대별 공룡 분포")
 
 period_count = df["시대"].value_counts()
 
-fig1, ax1 = plt.subplots(figsize=(6, 4))
+fig1, ax1 = plt.subplots(figsize=(4, 2.5))
 ax1.bar(period_count.index, period_count.values)
 ax1.set_title("시대별 공룡 수")
-ax1.set_ylabel("공룡 수")
+ax1.set_ylabel("수")
 
 st.pyplot(fig1)
 
 # -----------------------------
-# 1억년 전 ~ 현재 그래프
+# 1억년 전 ~ 현재
 # -----------------------------
 st.divider()
 st.subheader("📈 1억 년 전부터 현재까지")
@@ -116,16 +116,16 @@ timeline = pd.DataFrame({
     "공룡 다양성": [70, 95, 100, 0]
 })
 
-fig2, ax2 = plt.subplots(figsize=(7, 4))
+fig2, ax2 = plt.subplots(figsize=(4, 2.5))
 ax2.plot(
     timeline["백만 년 전"],
     timeline["공룡 다양성"],
     marker="o"
 )
 
-ax2.set_title("1억 년 전부터 현재까지")
+ax2.set_title("공룡 다양성 변화")
 ax2.set_xlabel("백만 년 전")
-ax2.set_ylabel("공룡 다양성")
+ax2.set_ylabel("다양성")
 
 st.pyplot(fig2)
 
@@ -133,13 +133,13 @@ st.pyplot(fig2)
 # 설명
 # -----------------------------
 st.info("""
-🦖 약 1억 년 전 공룡은 번성했어요.
+🦖 약 1억 년 전 공룡은 매우 번성했어요.
 
-🌟 약 8천만 년 전에는 다양한 종이 등장했어요.
+🌟 약 8천만 년 전에는 다양한 종류가 등장했어요.
 
 ☄️ 약 6,600만 년 전 소행성 충돌 이후 대부분 멸종했어요.
 
-🐦 오늘날의 새는 공룡의 후손으로 알려져 있어요.
+🐦 오늘날 새는 공룡의 후손으로 알려져 있어요.
 """)
 
 # -----------------------------
